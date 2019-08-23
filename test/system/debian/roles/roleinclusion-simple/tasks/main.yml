@@ -1,0 +1,11 @@
+---
+- name: (main) include install tasks
+  import_tasks: install.yml
+
+- name: (main) include configure tasks
+  import_tasks: configure.yml
+
+- name: (main) dynamic loading of simple role
+  include_role:
+    name: simplism
+    public: false

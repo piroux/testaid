@@ -1,0 +1,5 @@
+---
+
+- name: main | simple dummy task
+  debug:
+    msg: "I am quite simple and always succeed"

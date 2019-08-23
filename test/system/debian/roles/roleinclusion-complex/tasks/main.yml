@@ -1,0 +1,17 @@
+---
+- name: (main) include install tasks
+  import_tasks: install.yml
+
+- name: (main) include configure tasks
+  import_tasks: configure.yml
+
+- name: (main) import complex role
+  include_role:
+    name: newrelic.newrelic-infra
+    public: false
+    apply:
+      vars:
+        nrinfragent_config:
+          license_key: B000000000000000000000000000000000000000
+        nrinfragent_os_name: Debian
+        nrinfragent_os_codename: buster
