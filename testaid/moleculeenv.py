@@ -17,7 +17,7 @@ class MoleculeEnv(object):
         self._gather_roles = gather_roles
         self._testvars_roles_blacklist = testvars_roles_blacklist
         self._testvars_roles_whitelist = testvars_roles_whitelist
-        self._configure_roles_()
+        self._selected_roles = self._configure_selected_roles_()
         moleculelog.debug(self._get_molecule_vars_config_())
         moleculelog.debug('Using roles: ' + ','.join(self.get_roles()))
 
@@ -49,13 +49,13 @@ class MoleculeEnv(object):
         if not roles_dir.exists():
             return list()
 
-        roles = sorted([d.name for d in roles_dir.iterdir() if d.is_dir()])
+        roles = sorted([d.name for d in roles_dir.iterdir() if d.is_dir() and d.name in self._selected_roles])
         return roles
 
-    def _configure_roles_(self):
+    def _configure_selected_roles_(self):
         '''Create symlinks to roles'''
         if self._gather_roles is False:
-            return
+            return list()
 
         roles = None
 
@@ -72,18 +72,19 @@ class MoleculeEnv(object):
         if roles is None:
             roles = self._read_roles_from_playbook_('playbook.yml')
 
-        # if roles have been selected
-        # then apply blacklist
-        # then create symlinks
-        # then return
         if roles is not None:
             roles = self._roles_apply_blacklist_(roles)
-            self._create_roles_symlinks_(roles)
-            return
 
+        # if roles have been selected then create symlinks
+        if roles is not None:
+            self._create_roles_symlinks_(roles)
         # fallback: create symlink in molecule ephemeral directory
         # to roles directory in project dir which will include all roles
-        self._create_symlink_('roles')
+        else:
+            self._create_symlink_('roles')
+            roles = list()
+
+        return roles
 
     def _create_roles_symlinks_(self, roles):
         (self.get_molecule_ephemeral_directory() / 'roles').mkdir(
@@ -155,7 +156,7 @@ class MoleculeEnv(object):
         yaml = YAML(typ='safe')
         try:
             playbook = yaml.load(playbook_path)
-            roles = playbook[0]['roles']
+            roles = [role['role'] for role in playbook[0]['roles']]
             return roles
         except (FileNotFoundError, ScannerError, KeyError):
             return None
