@@ -154,12 +154,24 @@ class MoleculeEnv(object):
     def _read_roles_from_playbook_(self, playbook_file):
         playbook_path = self.get_molecule_scenario_directory() / playbook_file
         yaml = YAML(typ='safe')
+        roles = list()
         try:
             playbook = yaml.load(playbook_path)
-            roles = [role['role'] for role in playbook[0]['roles']]
-            return roles
-        except (FileNotFoundError, ScannerError, KeyError):
-            return None
+            if 'roles' in playbook[0]:
+                for role in playbook[0]['roles']:
+                    roles.append(role['role'])
+            # TODO: this search for roles should go deeper in the yaml tree
+            if 'tasks' in playbook[0]:
+                for task in playbook[0]['tasks']:
+                    for task_args in task:
+                        if task_args in ('import_role', 'include_role'):
+                            roles.append(task[task_args]['name'])
+            # roles = [role['role'] for role in playbook[0]['roles']]
+            roles = roles if len(roles) else None
+        except (FileNotFoundError, ScannerError):
+            roles = None
+        return roles
+
 
     def _roles_apply_blacklist_(self, roles):
         roles_not_blacklisted = list()
